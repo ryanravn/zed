@@ -5275,32 +5275,36 @@ impl Project {
     }
 
     pub fn update_local_settings_file(
-        &self,
+        &mut self,
         worktree_id: WorktreeId,
         rel_path: Arc<RelPath>,
-        cx: &mut App,
+        cx: &mut Context<Project>,
         update: impl 'static + Send + FnOnce(&mut settings::SettingsContent, &App),
     ) {
-        let Some(worktree) = self.worktree_for_id(worktree_id, cx) else {
-            // todo(settings_ui) error?
-            return;
-        };
-        cx.spawn(async move |cx| {
-            let file = worktree
-                .update(cx, |worktree, cx| worktree.load_file(&rel_path, cx))?
+        let open_buffer_task = self.open_buffer(
+            ProjectPath {
+                worktree_id,
+                path: rel_path,
+            },
+            cx,
+        );
+        cx.spawn(async move |this, cx| {
+            let buffer = open_buffer_task
                 .await
                 .context("Failed to load settings file")?;
 
+            let buffer_text = buffer.read_with(cx, |buffer, _| buffer.text())?;
             let new_text = cx.read_global::<SettingsStore, _>(|store, cx| {
-                store.new_text_for_update(file.text, move |settings| update(settings, cx))
+                store.new_text_for_update(buffer_text, move |settings| update(settings, cx))
             })?;
-            worktree
-                .update(cx, |worktree, cx| {
-                    let line_ending = text::LineEnding::detect(&new_text);
-                    worktree.write_file(rel_path.clone(), new_text.into(), line_ending, cx)
-                })?
+
+            buffer.update(cx, |buffer, cx| {
+                buffer.set_text(new_text, cx);
+            })?;
+
+            this.update(cx, |this, cx| this.save_buffer(buffer, cx))?
                 .await
-                .context("Failed to write settings file")?;
+                .context("Failed to save settings file")?;
 
             anyhow::Ok(())
         })

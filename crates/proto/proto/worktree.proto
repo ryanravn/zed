@@ -158,3 +158,25 @@ message UpdateUserSettings {
     uint64 project_id = 1;
     string contents = 2;
 }
+
+message LoadProjectFile {
+    uint64 project_id = 1;
+    uint64 worktree_id = 2;
+    string rel_path = 3;
+}
+
+message LoadProjectFileResponse {
+    message LoadProjectFileError {
+        string message = 1;
+        uint64 code = 2;
+    }
+
+    message LoadProjectFileSuccess {
+        string contents = 1;
+    }
+
+    oneof result {
+        LoadProjectFileError error = 1;
+        LoadProjectFileSuccess success = 2;
+    }
+}

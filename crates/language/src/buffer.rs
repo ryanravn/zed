@@ -385,6 +385,8 @@ pub enum DiskState {
     Present { mtime: MTime },
     /// Deleted file that was previously present.
     Deleted,
+    /// File stored remotely.
+    Remote,
 }
 
 impl DiskState {
@@ -394,6 +396,7 @@ impl DiskState {
             DiskState::New => None,
             DiskState::Present { mtime } => Some(mtime),
             DiskState::Deleted => None,
+            DiskState::Remote => None,
         }
     }
 
@@ -402,6 +405,7 @@ impl DiskState {
             DiskState::New => false,
             DiskState::Present { .. } => true,
             DiskState::Deleted => false,
+            DiskState::Remote => true,
         }
     }
 }
@@ -2073,6 +2077,7 @@ impl Buffer {
                 None => true,
             },
             DiskState::Deleted => false,
+            DiskState::Remote => false,
         }
     }
 

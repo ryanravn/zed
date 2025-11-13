@@ -706,6 +706,7 @@ impl Worktree {
         match self {
             Worktree::Local(this) => this.load_file(path, cx),
             Worktree::Remote(_) => {
+                // This needs to respect the private files configuration
                 Task::ready(Err(anyhow!("remote worktrees can't yet load files")))
             }
         }
