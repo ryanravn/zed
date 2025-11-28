@@ -14,6 +14,7 @@ mod settings;
 pub use crate::extension::init_proxy as init_extension_proxy;
 
 use crate::provider::anthropic::AnthropicLanguageModelProvider;
+use crate::provider::azure_foundry::AzureFoundryLanguageModelProvider;
 use crate::provider::bedrock::BedrockLanguageModelProvider;
 use crate::provider::cloud::CloudLanguageModelProvider;
 use crate::provider::copilot_chat::CopilotChatLanguageModelProvider;
@@ -191,6 +192,13 @@ fn register_language_model_providers(
     );
     registry.register_provider(
         MistralLanguageModelProvider::global(client.http_client(), cx),
+        cx,
+    );
+    registry.register_provider(
+        Arc::new(AzureFoundryLanguageModelProvider::new(
+            client.http_client(),
+            cx,
+        )),
         cx,
     );
     registry.register_provider(
